@@ -252,10 +252,11 @@ module Puppet::Util::IniConfig
       @destroy_empty = options.fetch(:destroy_empty, false)
     end
 
+    # Read and parse the on-disk file associated with this object
     def read
       text = @filetype.read
       if text.nil?
-        raise "Cannot read nonexistent file #{@file.inspect}"
+        raise IniParseError, "Cannot read nonexistent file #{@file.inspect}"
       end
       parse(text)
     end
