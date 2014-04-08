@@ -131,8 +131,7 @@ Puppet::Type.type(:yumrepo).provide(:inifile) do
   # @return [void]
   def create
     @property_hash[:ensure] = :present
-
-    new_section = section(@resource[:name])
+    @property_hash[:name]   = @resource[:name]
 
     # We fetch a list of properties from the type, then iterate
     # over them, avoiding ensure.  We're relying on .should to
@@ -141,8 +140,7 @@ Puppet::Type.type(:yumrepo).provide(:inifile) do
     PROPERTIES.each do |property|
       next if property == :ensure
       if value = @resource.should(property)
-        new_section[property.to_s] = value
-        @property_hash[property] = value
+        set_property(property, value)
       end
     end
   end
@@ -178,7 +176,7 @@ Puppet::Type.type(:yumrepo).provide(:inifile) do
   end
 
   def set_property(property, value)
-    if value == :absent
+    if value.to_sym == :absent
       section(@property_hash[:name])[property.to_s] = nil
     else
       section(@property_hash[:name])[property.to_s] = value
