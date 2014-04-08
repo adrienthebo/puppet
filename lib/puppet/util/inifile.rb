@@ -154,33 +154,45 @@ module Puppet::Util::IniConfig
       section.mark_clean unless section.nil?
     end
 
+    # Search for all sections we wish to destroy and remove
+    # them.
+    def delete_sections
+    end
+
+
     # Store all modifications made to sections in this file back
     # to the physical files. If no modifications were made to
-    # a physical file, nothing is written
+    # a physical file, nothing is written.
     def store
-      @files.each do |file, lines|
-        text = ""
+      @files.each do |file, sections|
         dirty = false
-        destroy = false
-        lines.each do |l|
-          if l.is_a?(Section)
-            destroy ||= l.destroy?
-            dirty ||= l.dirty?
-            text << l.format
-            l.mark_clean
-          else
-            text << l
-          end
-        end
-        # We delete the file and then remove it from the list of files.
-        if destroy
+        text = ""
+        # Start by deleting sections we don't want in the resulting output.
+        count = sections.count
+        sections.delete_if {|section| section.is_a?(Section) && section.destroy?}
+        # If we have no sections left, just delete the file.
+        if sections.count == 0
           ::File.unlink(file)
           @files.delete(file)
-        else
-          if dirty
-            Puppet::Util::FileType.filetype(:flat).new(file).write(text)
-            return file
+        # If the number of sections we're dealing with is now smaller then
+        # we're going to need to flush the file out even if no other section
+        # changed.
+        elsif sections.count < count
+          dirty = true
+          sections.each do |l|
+            if l.is_a?(Section)
+              dirty ||= l.dirty?
+              destroy ||= l.dirty?
+              text << l.format
+              l.mark_clean
+            else
+              text << l
+            end
           end
+        end
+        if dirty
+          Puppet::Util::FileType.filetype(:flat).new(file).write(text)
+          return file
         end
       end
     end
