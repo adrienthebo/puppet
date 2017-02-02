@@ -25,6 +25,14 @@ module Puppet
       @states[state_name]
     end
 
+    def namespaced_states(ns)
+      @states.values.inject({}) do |hash, state|
+        namespaced = state.namespace(ns)
+        hash[namespaced.name] = namespaced
+        hash
+      end
+    end
+
     def call
       MachineContext.new(self).call
     end

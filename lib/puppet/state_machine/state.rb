@@ -41,6 +41,18 @@ module Puppet
       def final?
         @options[:type] == :final
       end
+
+      # Generate a new state with namespaced transitions
+      #
+      # @param ns [Symbol]
+      # @return [Puppet::StateMachine::State]
+      def namespace(ns)
+        new_name = Array(@name).dup.unshift(ns)
+        new_transitions = Hash[@transitions.map do |(event, target)|
+          [event, Array(target).dup.unshift(ns)]
+        end]
+        Puppet::StateMachine::State.new(new_name, @action_cb, @event_cb, @options, new_transitions)
+      end
     end
   end
 end
