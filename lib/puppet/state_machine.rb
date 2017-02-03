@@ -8,6 +8,10 @@ module Puppet
       MachineBuilder.new(name).build(&block)
     end
 
+    def self.compose(name, machines, &block)
+      MachineBuilder.new(name).compose(machines, &block)
+    end
+
     attr_reader :name
     attr_reader :states
 
