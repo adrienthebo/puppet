@@ -100,4 +100,65 @@ context Puppet::StateMachine::MachineBuilder do
       end
     end
   end
+
+  context "composing machines" do
+    let(:m1) do
+      described_class.new("m1").build do |m|
+        m.start_state(:start)
+        m.state :start,
+          action: -> { },
+          event: ->(x) { :e1 },
+          transitions: {e1: :final}
+
+        m.state :final,
+          final: true,
+          action: -> { },
+          event: ->(x) { :e2 },
+          transitions: {e2: :final}
+      end
+    end
+
+    let(:m2) do
+      described_class.new("m2").build do |m|
+        m.start_state(:start)
+        m.state :start,
+          action: -> { },
+          event: ->(x) { :e3 },
+          transitions: {e3: :final}
+
+        m.state :final,
+          final: true,
+          action: -> { },
+          event: ->(x) { :e4 },
+          transitions: {e4: :final}
+      end
+    end
+
+    let(:composed) do
+      subject.compose(m1: m1, m2: m2) do |m|
+        m.start_state([:m1, :start])
+      end
+    end
+
+    it "composes all of the machine states" do
+      state_names = composed.states.keys
+      expect(state_names).to include([:m1, :start])
+      expect(state_names).to include([:m1, :final])
+      expect(state_names).to include([:m2, :start])
+      expect(state_names).to include([:m2, :final])
+    end
+
+    it "composes all of the machine transitions" do
+      m1_start = composed.state([:m1, :start])
+      m1_final = composed.state([:m1, :final])
+      m2_start = composed.state([:m2, :start])
+      m2_final = composed.state([:m2, :final])
+
+      expect(m1_start.transition_for(:e1)).to eq([:m1, :final])
+      expect(m1_final.transition_for(:e2)).to eq([:m1, :final])
+
+      expect(m2_start.transition_for(:e3)).to eq([:m2, :final])
+      expect(m2_final.transition_for(:e4)).to eq([:m2, :final])
+    end
+  end
 end

@@ -16,6 +16,13 @@ module Puppet
         Puppet::StateMachine.new(@machine_name, @states, @start_state)
       end
 
+      def compose(machines, &blk)
+        machines.each_pair do |ns, machine|
+          @states.merge!(machine.namespaced_states(ns))
+        end
+        build(&blk)
+      end
+
       def verify!
         verify_start_state!
         verify_transitions!
