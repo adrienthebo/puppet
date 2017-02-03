@@ -51,9 +51,19 @@ module Puppet
         new_transitions = Hash[@transitions.map do |(event, target)|
           [event, Array(target).dup.unshift(ns)]
         end]
-        Puppet::StateMachine::State.new(new_name, @action_cb, @event_cb, @options, new_transitions)
+
+        new_options = @options.dup
+        case new_options[:type]
+        when :final
+          new_event_cb = ->(_) { :'*final*' }
+          new_options.delete(:type)
+        when :error
+          new_event_cb = ->(_) { :'*error*' }
+        else
+          new_event_cb = @event_cb
+        end
+        Puppet::StateMachine::State.new(new_name, @action_cb, new_event_cb, new_options, new_transitions)
       end
     end
   end
 end
-

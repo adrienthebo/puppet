@@ -15,6 +15,32 @@ RSpec.context Puppet::StateMachine::State do
   end
 
   context "namespacing a state" do
+    context "with a special state type" do
+      context "final" do
+        let(:original) { described_class.new(:test, nil, nil, {type: :final}) }
+
+        subject { original.namespace(:ns) }
+
+        it "drops the state type" do
+          expect(subject).to_not be_final
+        end
+
+        it "overwrites the event block" do
+          expect(subject.event(nil)).to eq :'*final*'
+        end
+      end
+
+      context "error" do
+        let(:original) { described_class.new(:test, nil, nil, {type: :error}) }
+
+        subject { original.namespace(:ns) }
+
+        it "keeps the state type" do
+          expect(subject).to be_error
+        end
+      end
+    end
+
     context "that is not yet namespaced" do
       subject do
         described_class.new(:test, -> {}, ->(_) {}, {},
